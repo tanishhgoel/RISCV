@@ -118,7 +118,7 @@ def B(i, pc, reg_dic):
         pc = bge(reg_dic[rs1], reg_dic[rs2], imm, pc)
     return pc                               
 
-def R(i, pc, reg_dict):
+def R(i, pc, reg_dic):
     #try to create this
     ''''''
 
@@ -145,7 +145,7 @@ def jalr(rd, x6, imm, pc):
                                                #but otherwise i am returning pc with type <int>, handle that
     return pc 
 
-def I(i, pc, reg_dict, mem_dic):
+def I(i, pc, reg_dic, mem_dic):
     imm = i[:12]
     imm = sext(imm)
     rd = i[-11:-6]
@@ -196,8 +196,10 @@ def J_jal(i, pc, reg_dic):
     imm = sext(imm)
     imm = signed_conversion(imm)
     rd = i[-11:-6]
-    rd = pc + 4
+    reg_dic[rd] = pc + 4
     pc += imm                                 #assuming pc is int
     return pc                                 #assuming pc is int                                               
+
+
 reg_dic = {}
 mem_dic = {}
