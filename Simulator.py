@@ -1,4 +1,5 @@
 #considering pc as integer value for now
+#value going into reg_dic is is 32 bit for now, convert it into 16 bit
 def sext(imm):
     if imm[0] == 0:
         while len(imm)<32 :
@@ -19,7 +20,7 @@ def decimaltobinary(num):
         s = s[::-1]
         filler = 32 - len(s)
         if filler < 0:
-            print("number out of Range")
+            #print("number out of Range")
             s='-1'
             return s
         s = filler*"0" + s
@@ -40,7 +41,7 @@ def decimaltobinary(num):
         s = s[::-1]
         filler = 32 - len(s)
         if filler < 0:
-            print("Number out of Range")
+            #print("Number out of Range")
             s='-1'
             return s
         s = filler*"1" + s
@@ -136,7 +137,7 @@ def addi(rd, rs1, imm, pc, reg_dic):
     return pc + 4                              #assuming pc is int 
 
 def jalr(rd, x6, imm, pc):
-    reg_dic[rd] = pc + 4
+    reg_dic[rd] = decimaltobinary(pc + 4)      #pc + 4 is int but reg_dic[rd] stores binary value
     x6 = sext(x6)
     x6 = signed_conversion(x6)
     imm = signed_conversion(imm)
@@ -173,7 +174,7 @@ def S_sw(i, pc, reg_dic, mem_dic):
 
 def lui(rd, imm, pc, reg_dic):
     imm = signed_conversion(imm)
-    reg_dic[rd] = pc + imm
+    reg_dic[rd] = decimaltobinary(pc + imm)   #pc + imm is int but reg_dic[rd] stores binary value
     return pc + 4                             #assuming pc is int
 
 def aiupc(rd, imm, pc, reg_dic):
@@ -196,10 +197,10 @@ def J_jal(i, pc, reg_dic):
     imm = sext(imm)
     imm = signed_conversion(imm)
     rd = i[-11:-6]
-    reg_dic[rd] = pc + 4
+    reg_dic[rd] = decimaltobinary(pc + 4)     #pc + imm is int but reg_dic[rd] stores binary value
     pc += imm                                 #assuming pc is int
     return pc                                 #assuming pc is int                                               
 
 
-reg_dic = {}
+reg_dic = {"00001": "0000000000000000" }
 mem_dic = {}
