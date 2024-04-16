@@ -1,3 +1,4 @@
+#considering pc as integer value for now
 def sext(imm):
     if imm[0] == 0:
         while len(imm)<32 :
@@ -61,9 +62,9 @@ def beq(rs1, rs2, imm, pc):
     rs2 = signed_conversion(rs1)
     imm = signed_conversion(imm)
     if rs1 == rs2:
-        pc += imm
+        pc += imm                              #assuming pc is int
     else:
-        pc += 4
+        pc += 4                                #assuming pc is int
     return pc
 
 def bne(rs1, rs2, imm, pc):
@@ -73,9 +74,9 @@ def bne(rs1, rs2, imm, pc):
     rs2 = signed_conversion(rs1)
     imm = signed_conversion(imm)
     if rs1 != rs2:
-        pc += imm
+        pc += imm                              #assuming pc is int
     else:
-        pc += 4
+        pc += 4                                #assuming pc is int
     return imm
 
 def bge(rs1, rs2, imm, pc):
@@ -85,9 +86,9 @@ def bge(rs1, rs2, imm, pc):
     rs2 = signed_conversion(rs1)
     imm = signed_conversion(imm)
     if rs1 >= rs2:
-        pc += imm
+        pc += imm                              #assuming pc is int
     else:
-        pc += 4
+        pc += 4                                #assuming pc is int
     return pc
 
 def blt(rs1, rs2, imm, pc):
@@ -97,9 +98,9 @@ def blt(rs1, rs2, imm, pc):
     rs2 = signed_conversion(rs1)
     imm = signed_conversion(imm)
     if rs1 < rs2:
-        pc += imm
+        pc += imm                              #assuming pc is int
     else:
-        pc += 4
+        pc += 4                                #assuming pc is int                                         
     return pc
 def B(i, pc, reg_dic):
     imm = i[0] + i[24] + i[1:7] + i[20:24]
@@ -115,7 +116,7 @@ def B(i, pc, reg_dic):
         pc = blt(reg_dic[rs1], reg_dic[rs2], imm, pc)
     if func3 == "101":
         pc = bge(reg_dic[rs1], reg_dic[rs2], imm, pc)
-    return pc
+    return pc                               
 
 def R(i, pc, reg_dict):
     #try to create this
@@ -123,16 +124,16 @@ def R(i, pc, reg_dict):
 
 def lw(rd, rs1, imm, pc, reg_dic, mem_dic):
     rs1 = sext(rs1)
-    rs1 = signed_conversion(rs1)
+    rs1 = signed_conversion(rs1)               
     imm = signed_conversion(imm)               #check for rs1 + imm overflow
     reg_dic[rd] = mem_dic[rs1+imm]             #if binary value not 32 bits, you need to sign extend
-    return pc + 4
-def addi(rd, rs1, imm, pc):
+    return pc + 4                              #assuming pc is int
+def addi(rd, rs1, imm, pc, reg_dic):
     rs1 = sext(rs1)
     rs1 = signed_conversion(rs1)
     imm = signed_conversion(imm)
     reg_dic[rd] = decimaltobinary(rs1 + imm)   #check for rs1 + imm overflow
-    return pc + 4
+    return pc + 4                              #assuming pc is int 
 
 def jalr(rd, x6, imm, pc):
     reg_dic[rd] = pc + 4
@@ -140,7 +141,8 @@ def jalr(rd, x6, imm, pc):
     x6 = signed_conversion(x6)
     imm = signed_conversion(imm)
     pc += decimaltobinary(x6 + imm)            #check for rs1 + imm overflow
-    pc = pc[:-1] + "0"
+    pc = pc[:-1] + "0"                         #here pc is now in binary and binary str is being returned,
+                                               #but otherwise i am returning pc with type <int>, handle that
     return pc 
 
 def I(i, pc, reg_dict, mem_dic):
@@ -153,9 +155,49 @@ def I(i, pc, reg_dict, mem_dic):
     if (func3 == "010") and (opcode == "0000011"):
         pc = lw(rd, reg_dic[rs1], imm, pc, reg_dic, mem_dic)
     if func3 == "000" and (opcode == "0010011"):
-        pc = addi(rd, reg_dic[rs1], imm, pc)
+        pc = addi(rd, reg_dic[rs1], imm, pc, reg_dic)
     if func3 == "000" and (opcode == "1100111"):
         pc = jalr(rd, reg_dic[rs1], imm, pc)
+    return pc
 
+def S_sw(i, pc, reg_dic, mem_dic):
+    imm = i[:-24] + i[-11:-6]
+    imm = sext(imm)
+    imm = signed_conversion(imm)
+    rs1 = i[-19:14]
+    rs1 = sext(rs1)                           #check for rs1 + imm overflow
+    rs1 = signed_conversion(rs1)
+    rs2 = i[-24:-19]
+    reg_dic[rs2] = mem_dic[rs1 + imm]         #if binary value not 32 bits, you need to sign extend
+    return pc + 4                             #assuming pc is int
+
+def lui(rd, imm, pc, reg_dic):
+    imm = signed_conversion(imm)
+    reg_dic[rd] = pc + imm
+    return pc + 4                             #assuming pc is int
+
+def aiupc(rd, imm, pc, reg_dic):
+    reg_dic[rd] = imm
+    return pc + 4                             #assuming pc is int
+
+def U(i, pc, reg_dic):
+    imm = i[:-11]
+    imm = "000000000000" + imm
+    rd = i[-11:-6]
+    opcode = i[-6:]
+    if opcode == "0110111":
+        pc = lui(rd, imm, pc, reg_dic)
+    if opcode == "0010111":
+        pc = aiupc(rd, imm, pc, reg_dic)
+    return pc
+
+def J_jal(i, pc, reg_dic):
+    imm = i[0] + i[-20:-11] + i[-21] + i[-31:-21]                #check
+    imm = sext(imm)
+    imm = signed_conversion(imm)
+    rd = i[-11:-6]
+    rd = pc + 4
+    pc += imm                                 #assuming pc is int
+    return pc                                 #assuming pc is int                                               
 reg_dic = {}
 mem_dic = {}
