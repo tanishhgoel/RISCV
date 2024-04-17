@@ -106,7 +106,7 @@ def blt(rs1, rs2, imm, pc):
 def B(i, pc, reg_dic):
     ti = i[::-1]
     # imm[12|10 : 5] rs2 rs1 funct3 imm[4 : 1|11] opcode
-    imm = i[0] + ti[7] + i[1:7] + ti[8:12][::-1]
+    imm = i[0] + ti[7] + i[1:7] + ti[8:12][::-1] + '0'
     imm = sext(imm)
     func3 = ti[12:15][::-1]
     rs1 = ti[15:20][::-1]
