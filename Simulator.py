@@ -278,13 +278,13 @@ def S_sw(i, pc, reg_opc_to_mem_add, mem_dic):
 
 def lui(rd, imm, pc, reg_dic):
     imm = signed_conversion(imm)
-    print(imm, "#lui", pc)
+    #print(imm, "#lui", pc)
     reg_dic[rd] = decimaltobinary(imm)   #pc + imm is int but reg_dic[rd] stores binary value
     return pc + 4                             #assuming pc is int
 
 def aiupc(rd, imm, pc, reg_dic):
     imm = signed_conversion(imm)
-    print(imm, "#aiupc", pc)
+    #print(imm, "#aiupc", pc)
     reg_dic[rd] = decimaltobinary(imm+pc)
     return pc + 4                             #assuming pc is int
 
@@ -311,7 +311,6 @@ def J_jal(i, pc, reg_dic):
     reg_dic[rd] = decimaltobinary(pc + 4)     #pc + imm is int but reg_dic[rd] stores binary value
     pc = decimaltobinary(pc + imm)            #check for rs1 + imm overflow
     pc = pc[:-1] + "0"
-    pc = int(pc, 2)
     return pc                                                                           
 
 def simulator(reg_dic, mem_dic, pc_dic, reg_opc_to_mem_add):
