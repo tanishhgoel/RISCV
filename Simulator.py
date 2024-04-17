@@ -233,12 +233,11 @@ def addi(rd, rs1, imm, pc, reg_dic):
 
 def jalr(rd, x6, imm, pc, reg_dic):
     reg_dic[rd] = decimaltobinary(pc + 4)      #pc + 4 is int but reg_dic[rd] stores binary value
-    x6 = sext(x6)
     x6 = signed_conversion(x6)
     imm = signed_conversion(imm)
-    pc += decimaltobinary(x6 + imm)            #check for rs1 + imm overflow
-    pc = pc[:-1] + "0"                         #here pc is now in binary and binary str is being returned,
-                                               #but otherwise i am returning pc with type <int>, handle that
+    pc = decimaltobinary(x6 + imm)            #check for rs1 + imm overflow
+    pc = pc[:-1] + "0"
+    pc = int(pc, 2)                        
     return pc 
 
 def I(i, pc, reg_dic, mem_dic):
@@ -308,10 +307,11 @@ def J_jal(i, pc, reg_dic):
     #imm = i[0] + i[12:21] + i[11] + i[1:11]                #check
     imm = sext(imm)
     imm = signed_conversion(imm)
-    rd = i[-12:-7]
+    rd = ti[7:12][::-1]
     reg_dic[rd] = decimaltobinary(pc + 4)     #pc + imm is int but reg_dic[rd] stores binary value
-    pc += imm                                 #assuming pc is int
-    return pc                               #assuming pc is int                                               
+    pc = decimaltobinary(pc + imm)            #check for rs1 + imm overflow
+    pc = pc[:-1] + "0"
+    return pc                                                                           
 
 def simulator(reg_dic, mem_dic, pc_dic, reg_opc_to_mem_add):
     pc = 0
