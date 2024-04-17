@@ -78,7 +78,7 @@ def bne(rs1, rs2, imm, pc):
         pc += imm                              #assuming pc is int
     else:
         pc += 4                                #assuming pc is int
-    return imm
+    return pc
 
 def bge(rs1, rs2, imm, pc):
     rs1 = sext(rs1)
