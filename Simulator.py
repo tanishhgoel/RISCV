@@ -117,9 +117,94 @@ def B(i, pc, reg_dic):
         pc = bge(reg_dic[rs1], reg_dic[rs2], imm, pc)
     return pc                               
 
-def R(i, pc, reg_dic):
-    #try to create this
-    ''''''
+
+# Add: add rd, rs1, rs2 rd = sext(rs1) + sext(rs2) (Overflow are ignored)
+def add(rd, rs1, rs2, pc, reg_dic):
+    rs1 = sext(rs1)
+    rs2 = sext(rs2)
+    rs1 = signed_conversion(rs1)
+    rs2 = signed_conversion(rs2)
+    reg_dic[rd] = decimaltobinary(rs1 + rs2)   #check for rs1 + rs2 overflow
+    return pc + 4                              #assuming pc is int
+
+# Sub: sub rd, rs1, rs2 rd = signed(rs1) - signed(rs2) 
+def sub(rd, rs1, rs2, pc, reg_dic):
+    rs1 = signed_conversion(rs1)
+    rs2 = signed_conversion(rs2)
+    reg_dic[rd] = decimaltobinary(rs1 - rs2)   #check for rs1 - rs2 overflow
+    return pc + 4                              #assuming pc is int
+
+# Slt: slt rd, rs1, rs2 rd = 1. If sext(rs1) < sext(rs2)
+def slt(rd, rs1, rs2, pc, reg_dic):
+    rs1 = sext(rs1)
+    rs2 = sext(rs2)
+    rs1 = signed_conversion(rs1)
+    rs2 = signed_conversion(rs2)
+    if rs1 < rs2:
+        reg_dic[rd] = decimaltobinary(1)
+    return pc + 4                              #assuming pc is int
+
+# Sltu: sltu rd, rs1, rs2 rd = 1. If unsigned(rs1) < unsigned(rs2)
+def sltu(rd, rs1, rs2, pc, reg_dic):
+    if rs1 < rs2:
+        reg_dic[rd] = decimaltobinary(1)
+    return pc + 4                              #assuming pc is int
+
+# XOR: xor rd, rs1, rs2 rd = rs1⊕rs2 (Bitwise Exor)
+def xor(rd, rs1, rs2, pc, reg_dic):
+    reg_dic[rd] = decimaltobinary(rs1 ^ rs2)
+    return pc + 4                              #assuming pc is int
+
+# sll rd, rs1, rs2 rd = rs1<<unsigned(rs2[4:0])
+# Left shift rs1 by the value in lower 5 bits of rs2.
+def sll(rd, rs1, rs2, pc, reg_dic):
+    rs2 = rs2[-5:]
+    reg_dic[rd] = decimaltobinary(rs1 << int(rs2, 2))
+    return pc + 4                              #assuming pc is int
+
+# srl rd, rs1, rs2 rd = rs1>>unsigned(rs2[4:0])
+# Right shift rs1 by the value in lower 5 bits of rs2.
+def srl(rd, rs1, rs2, pc, reg_dic):
+    rs2 = rs2[-5:]
+    reg_dic[rd] = decimaltobinary(rs1 >> int(rs2, 2))
+    return pc + 4                              #assuming pc is int
+
+# or rd, rs1, rs2 rd = rs1|rs2 (Bitwise logical or.)
+def or_(rd, rs1, rs2, pc, reg_dic):
+    reg_dic[rd] = decimaltobinary(rs1 | rs2)
+    return pc + 4                              #assuming pc is int
+
+# and rd, rs1, rs2 rd = rs1&rs2 (Bitwise logical and.)
+def and_(rd, rs1, rs2, pc, reg_dic):
+    reg_dic[rd] = decimaltobinary(rs1 & rs2)
+    return pc + 4                              #assuming pc is int
+# [31:25] [24:20] [19:15] [14:12] [11:7] [6:0]
+# funct7 rs2 rs1 funct3 rd opcode R-type
+def R(i, pc, reg_dic, mem_dic):
+    rd = i[-7:]
+    rs1 = i[-15:-12]
+    rs2 = i[-20:-15]
+    funct3 = i[-12:-15]
+    funct7 = i[:7]  
+    if (funct3 == "000") and (funct7 == "0000000"):
+        pc = add(rd, reg_dic[rs1], reg_dic[rs2], pc, reg_dic)
+    if (funct3 == "000") and (funct7 == "0100000"):
+        pc = sub(rd, reg_dic[rs1], reg_dic[rs2], pc, reg_dic)
+    if (funct3 == "010") and (funct7 == "0000000"):
+        pc = slt(rd, reg_dic[rs1], reg_dic[rs2], pc, reg_dic)
+    if (funct3 == "011") and (funct7 == "0000000"):
+        pc = sltu(rd, reg_dic[rs1], reg_dic[rs2], pc, reg_dic)
+    if (funct3 == "100") and (funct7 == "0000000"):
+        pc = xor(rd, reg_dic[rs1], reg_dic[rs2], pc, reg_dic)
+    if (funct3 == "001") and (funct7 == "0000000"):
+        pc = sll(rd, reg_dic[rs1], reg_dic[rs2], pc, reg_dic)
+    if (funct3 == "101") and (funct7 == "0000000"):
+        pc = srl(rd, reg_dic[rs1], reg_dic[rs2], pc, reg_dic)
+    if (funct3 == "110") and (funct7 == "0000000"):
+        pc = or_(rd, reg_dic[rs1], reg_dic[rs2], pc, reg_dic)
+    if (funct3 == "111") and (funct7 == "0000000"):
+        pc = and_(rd, reg_dic[rs1], reg_dic[rs2], pc, reg_dic)
+    return pc
 
 def lw(rd, rs1, imm, pc, reg_dic, mem_dic):
     rs1 = sext(rs1)
