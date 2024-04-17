@@ -56,9 +56,6 @@ def signed_conversion(imm):
     else:
         return int(imm, 2)
 
-def unsigned_conversion(imm):
-    return int(imm, 2)
-
 def beq(rs1, rs2, imm, pc):
     rs1 = sext(rs1)
     rs2 = sext(rs2)
@@ -312,33 +309,28 @@ def simulator(reg_dic, mem_dic, pc_dic, reg_opc_to_mem_add):
 
 
 
-reg_dic = {'00000': "0"*16, '00001': "0"*16, '00010': "0"*16, '00011': "0"*16, '00100': "0"*16, '00101': "0"*16, '00110': "0"*16, '00111': "0"*16, 
-           '01000': "0"*16, '01001': "0"*16, '01010': "0"*16, '01011': "0"*16, '01100': "0"*16, '01101': "0"*16, '01110': "0"*16, '01111': "0"*16, 
-           '10000': "0"*16, '10001': "0"*16, '10010': "0"*16, '10011': "0"*16, '10100': "0"*16, '10101': "0"*16, '10110': "0"*16, '10111': "0"*16, 
-           '11000': "0"*16, '11001': "0"*16, '11010': "0"*16, '11011': "0"*16, '11100': "0"*16, '11101': "0"*16, '11110': "0"*16, '11111': "0"*16}
+reg_dic = {'program': '0b00000000000000000000000000000000', '00000': "0"*16, '00001': "0"*16, '00010': "0"*16, '00011': "0"*16, '00100': "0"*16, '00101': "0"*16, '00110': "0"*16, '00111': "0"*16, 
+    '01000': "0"*16, '01001': "0"*16, '01010': "0"*16, '01011': "0"*16, '01100': "0"*16, '01101': "0"*16, '01110': "0"*16, '01111': "0"*16, 
+    '10000': "0"*16, '10001': "0"*16, '10010': "0"*16, '10011': "0"*16, '10100': "0"*16, '10101': "0"*16, '10110': "0"*16, '10111': "0"*16, 
+    '11000': "0"*16, '11001': "0"*16, '11010': "0"*16, '11011': "0"*16, '11100': "0"*16, '11101': "0"*16, '11110': "0"*16, '11111': "0"*16}
 
 mem_dic = {}
 reg_opc_to_mem_add = {}
 
-mem_keys = list(mem_dict.keys())
-
-for i, reg_key in enumerate(reg_dict):
-   
-    if i < len(mem_keys):
-       
-        reg_opc_to_mem_add[reg_key] = mem_keys[i]
-
-print(reg_opc_to_mem_add)
-
 # MEM_DICT
-for i in range(32):  
-    address = f'0x{int(0x00100000 + i * 4):08X}'  
-    mem_dic[address] = '0' * 32
-    
-last_address = '0x0010007F'
-mem_dic[last_address] = '0' * 32
 
-# Read input from file
+for i in range(32):  
+    address = f'0x{int(0x00100000 + i*4):08X}'  
+    mem_dic[address] = '0' * 32
+
+mem_keys = list(mem_dic.keys())
+
+keys1 = list(reg_dic.keys())
+keys1.remove('program')
+keys2 = list(mem_dic.keys())
+for key1, key2 in zip(keys1, keys2):
+    reg_opc_to_mem_add[key1] = key2
+
 if len(sys.argv) < 3:
     sys.exit("Input file path and output file path are required")
 
@@ -372,6 +364,5 @@ with open(output, "r") as output_file:
         output_file.write(line + "\n")
     for i in mem_dic.keys():
         output_file.write(i + ":" + mem_dic[i] + "\n")
-
 
 sys.exit()   
