@@ -213,7 +213,9 @@ def lw(rd, rs1, imm, pc, reg_dic, mem_dic):
     rs1 = sext(rs1)
     rs1 = signed_conversion(rs1)               
     imm = signed_conversion(imm)               #check for rs1 + imm overflow
-    reg_dic[rd] = mem_dic[rs1+imm]             #if binary value not 32 bits, you need to sign extend
+    number = rs1 + imm
+    hex = f"0x{number:08X}" 
+    reg_dic[rd] = mem_dic[hex]             
     return pc + 4                              #assuming pc is int
 def addi(rd, rs1, imm, pc, reg_dic):
     rs1 = sext(rs1)
@@ -247,7 +249,7 @@ def I(i, pc, reg_dic, mem_dic):
         pc = jalr(rd, reg_dic[rs1], imm, pc, reg_dic)
     return pc
 
-def S_sw(i, pc, reg_dic, mem_dic):
+def S_sw(i, pc, reg_opc_to_mem_add, mem_dic):
     imm = i[:-25] + i[-12:-7]
     imm = sext(imm)
     imm = signed_conversion(imm)
@@ -255,7 +257,8 @@ def S_sw(i, pc, reg_dic, mem_dic):
     rs1 = sext(rs1)                           #check for rs1 + imm overflow
     rs1 = signed_conversion(rs1)
     rs2 = i[-25:-20]
-    reg_dic[rs2] = mem_dic[rs1 + imm]         #if binary value not 32 bits, you need to sign extend
+    number = rs1 + imm
+    mem_dic[reg_opc_to_mem_add[rs2]] = decimaltobinary(number)
     return pc + 4                             #assuming pc is int
 
 def lui(rd, imm, pc, reg_dic):
@@ -287,7 +290,7 @@ def J_jal(i, pc, reg_dic):
     pc += imm                                 #assuming pc is int
     return pc                                 #assuming pc is int                                               
 
-def simulator(reg_dic, mem_dic, pc_dic):
+def simulator(reg_dic, mem_dic, pc_dic, reg_opc_to_mem_add):
     pc = 0
     while pc <= 252:
         inst = pc_dic[pc]
@@ -298,7 +301,7 @@ def simulator(reg_dic, mem_dic, pc_dic):
         if opc == "0000011" or opc == "0010011" or opc == "1100111":
             pc = I(inst, pc, reg_dic, mem_dic)
         if opc == "0100011":
-            pc = S_sw(inst, pc, reg_dic, mem_dic)
+            pc = S_sw(inst, pc, reg_opc_to_mem_add, mem_dic)
         if opc == "1100011":
             pc = B(inst, pc, reg_dic)
         if opc == "0010111" or opc == "0110111":
@@ -309,8 +312,18 @@ def simulator(reg_dic, mem_dic, pc_dic):
 
 
 
-reg_dic = {"program":"0b00000000000000000000000000000000", }
+reg_dic = { }
 mem_dic = {}
+reg_opc_to_mem_add = {}
+
+# Data Memory
+for i in range(32):  
+    address = f'0x{int(0x00100000 + i * 4):08X}'  
+    mem_dic[address] = '0' * 32
+    
+last_address = '0x0010007F'
+mem_dic[last_address] = '0' * 32
+
 # Read input from file
 if len(sys.argv) < 3:
     sys.exit("Input file path and output file path are required")
@@ -338,10 +351,13 @@ with open(input, "r") as input_file:
         pc_dic[pc] = line
         pc += 4
 
-simulator(reg_dic, mem_dic, pc_dic)
+simulator(reg_dic, mem_dic, pc_dic, reg_opc_to_mem_add)
 # Write output to the output file
 with open(output, "r") as output_file:
     for line in output:
         output_file.write(line + "\n")
+    for i in mem_dic.keys():
+        output_file.write(i + ":" + mem_dic[i] + "\n")
+
 
 sys.exit()   
