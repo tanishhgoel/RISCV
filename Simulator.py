@@ -2,7 +2,7 @@ import sys
 import os
 
 def sext(imm):
-    if imm[0] == 0:
+    if imm[0] == '0':
         while len(imm)<32 :
             imm = '0' + imm
         return imm
@@ -60,7 +60,7 @@ def beq(rs1, rs2, imm, pc):
     rs1 = sext(rs1)
     rs2 = sext(rs2)
     rs1 = signed_conversion(rs1)
-    rs2 = signed_conversion(rs1)
+    rs2 = signed_conversion(rs2)
     imm = signed_conversion(imm)
     if rs1 == rs2:
         pc += imm                              #assuming pc is int
@@ -72,7 +72,7 @@ def bne(rs1, rs2, imm, pc):
     rs1 = sext(rs1)
     rs2 = sext(rs2)
     rs1 = signed_conversion(rs1)
-    rs2 = signed_conversion(rs1)
+    rs2 = signed_conversion(rs2)
     imm = signed_conversion(imm)
     if rs1 != rs2:
         pc += imm                              #assuming pc is int
@@ -84,7 +84,7 @@ def bge(rs1, rs2, imm, pc):
     rs1 = sext(rs1)
     rs2 = sext(rs2)
     rs1 = signed_conversion(rs1)
-    rs2 = signed_conversion(rs1)
+    rs2 = signed_conversion(rs2)
     imm = signed_conversion(imm)
     if rs1 >= rs2:
         pc += imm                              #assuming pc is int
@@ -96,7 +96,7 @@ def blt(rs1, rs2, imm, pc):
     rs1 = sext(rs1)
     rs2 = sext(rs2)
     rs1 = signed_conversion(rs1)
-    rs2 = signed_conversion(rs1)
+    rs2 = signed_conversion(rs2)
     imm = signed_conversion(imm)
     if rs1 < rs2:
         pc += imm                              #assuming pc is int
@@ -104,11 +104,13 @@ def blt(rs1, rs2, imm, pc):
         pc += 4                                #assuming pc is int                                         
     return pc
 def B(i, pc, reg_dic):
-    imm = i[0] + i[24] + i[1:7] + i[20:24]
+    ti = i[::-1]
+    # imm[12|10 : 5] rs2 rs1 funct3 imm[4 : 1|11] opcode
+    imm = i[0] + ti[7] + i[1:7] + ti[8:12][::-1]
     imm = sext(imm)
-    func3 = i[-15:-12]
-    rs1 = i[-20:-15]
-    rs2 = i[-25:-20]
+    func3 = ti[12:15][::-1]
+    rs1 = ti[15:20][::-1]
+    rs2 = ti[20:25][::-1]
     if func3 == "000":
         pc = beq(reg_dic[rs1], reg_dic[rs2], imm, pc)
     if func3 == "001":
@@ -160,32 +162,33 @@ def xor(rd, rs1, rs2, pc, reg_dic):
 # Left shift rs1 by the value in lower 5 bits of rs2.
 def sll(rd, rs1, rs2, pc, reg_dic):
     rs2 = rs2[-5:]
-    reg_dic[rd] = decimaltobinary(rs1 << int(rs2, 2))
+    reg_dic[rd] = decimaltobinary(int(rs1, 2) << int(rs2, 2))
     return pc + 4                              #assuming pc is int
 
 # srl rd, rs1, rs2 rd = rs1>>unsigned(rs2[4:0])
 # Right shift rs1 by the value in lower 5 bits of rs2.
 def srl(rd, rs1, rs2, pc, reg_dic):
     rs2 = rs2[-5:]                             #check indexing here
-    reg_dic[rd] = decimaltobinary(rs1 >> int(rs2, 2))
+    reg_dic[rd] = decimaltobinary(int(rs1, 2) >> int(rs2, 2))
     return pc + 4                              #assuming pc is int
 
 # or rd, rs1, rs2 rd = rs1|rs2 (Bitwise logical or.)
 def or_(rd, rs1, rs2, pc, reg_dic):
-    reg_dic[rd] = decimaltobinary(rs1 | rs2)
+    reg_dic[rd] = decimaltobinary(int(rs1,2) | int(rs2, 2))
     return pc + 4                              #assuming pc is int
 
 # and rd, rs1, rs2 rd = rs1&rs2 (Bitwise logical and.)
 def and_(rd, rs1, rs2, pc, reg_dic):
-    reg_dic[rd] = decimaltobinary(rs1 & rs2)
+    reg_dic[rd] = decimaltobinary(int(rs1, 2) & int(rs2, 2))
     return pc + 4                              #assuming pc is int
 # [31:25] [24:20] [19:15] [14:12] [11:7] [6:0]
 # funct7 rs2 rs1 funct3 rd opcode R-type
 def R(i, pc, reg_dic):
-    rd = i[-7:]
-    rs1 = i[-20:-15]
-    rs2 = i[-25:-20]
-    funct3 = i[-15:-12]
+    ti = i[::-1]
+    rd = ti[7:12][::-1]
+    rs1 = ti[15:20][::-1]
+    rs2 = ti[20:25][::-1]
+    funct3 = ti[12:15][::-1]
     funct7 = i[:7]  
     if (funct3 == "000") and (funct7 == "0000000"):
         pc = add(rd, reg_dic[rs1], reg_dic[rs2], pc, reg_dic)
@@ -206,18 +209,25 @@ def R(i, pc, reg_dic):
     if (funct3 == "111") and (funct7 == "0000000"):
         pc = and_(rd, reg_dic[rs1], reg_dic[rs2], pc, reg_dic)
     return pc
-def lw(rd, rs1, imm, pc, reg_dic, mem_dic):
-    rs1 = sext(rs1)
-    rs1 = signed_conversion(rs1)               
-    imm = signed_conversion(imm)               #check for rs1 + imm overflow
-    number = rs1 + imm
-    hex = f"0x{number:08X}" 
-    reg_dic[rd] = mem_dic[hex]             
+def lw(rd, rs1, imm, pc, reg_dic, mem_dic):        #00000001010101001010000000100011
+    rs1 = signed_conversion(rs1)
+    rs1 = f"0x{rs1:08X}"           
+    #imm = signed_conversion(imm)        #check for rs1 + imm overflowm")
+    imm = signed_conversion(imm)
+    immt = f"0x{imm:08X}"
+    t= hex(int(rs1[2:], 16) + int(immt[2:], 16))
+    t32 = f"0x{int(t, 16):08X}"
+
+    #number = rs1 + imm
+    #hexe = f"0x{number:08X}" 
+    reg_dic[rd] = mem_dic[t32]             
     return pc + 4                              #assuming pc is int
 def addi(rd, rs1, imm, pc, reg_dic):
     rs1 = sext(rs1)
     rs1 = signed_conversion(rs1)
+    #print(imm)
     imm = signed_conversion(imm)
+    #print("addi", rs1, imm)
     reg_dic[rd] = decimaltobinary(rs1 + imm)   #check for rs1 + imm overflow
     return pc + 4                              #assuming pc is int 
 
@@ -232,11 +242,13 @@ def jalr(rd, x6, imm, pc, reg_dic):
     return pc 
 
 def I(i, pc, reg_dic, mem_dic):
+    ti = i[::-1]
     imm = i[:12]
     imm = sext(imm)
-    rd = i[-12:-7]
-    rs1 = i[-20:-15] 
-    func3 = i[-15:-12]
+    rd = ti[7:12][::-1]
+    rs1 = ti[15:20][::-1] 
+    func3 = ti[12:15][::-1]
+    #opcode = i[-8:]
     opcode = i[-7:]
     if (func3 == "010") and (opcode == "0000011"):
         pc = lw(rd, reg_dic[rs1], imm, pc, reg_dic, mem_dic)
@@ -247,16 +259,26 @@ def I(i, pc, reg_dic, mem_dic):
     return pc
 
 def S_sw(i, pc, reg_opc_to_mem_add, mem_dic):
-    imm = i[:-25] + i[-12:-7]
+    ti = i[::-1]
+    imm = i[:7]+i[20:25]
+    #print(imm, "lol")
+    
     imm = sext(imm)
     imm = signed_conversion(imm)
-    rs1 = i[-20:-15]
-    rs1 = sext(rs1)                           #check for rs1 + imm overflow
-    rs1 = signed_conversion(rs1)
-    rs2 = i[-25:-20]
-    number = rs1 + imm
-    mem_dic[reg_opc_to_mem_add[rs2]] = decimaltobinary(number)
-    return pc + 4                             #assuming pc is int
+    immt = f"0x{imm:08X}"
+    
+    rs1 = ti[15:20][::-1]
+    rs1x = rs1
+    rs1 = sext(reg_dic[rs1])                           #check for rs1 + imm overflow
+    rs1 = signed_conversion(rs1)  #
+    num = rs1+imm
+    num = f"0x{num:08X}"
+    rs2 = ti[20:25][::-1]
+    t=hex(int(reg_opc_to_mem_add[rs1x][2:], 16) + int(immt[2:], 16))
+    t32 = f"0x{int(t, 16):08X}"
+    mem_dic[num] = reg_dic[rs2]
+    #print(mem_dic)
+    return pc + 4                                                          #assuming pc is int
 
 def lui(rd, imm, pc, reg_dic):
     imm = signed_conversion(imm)
@@ -268,9 +290,10 @@ def aiupc(rd, imm, pc, reg_dic):
     return pc + 4                             #assuming pc is int
 
 def U(i, pc, reg_dic):
-    imm = i[:-12]
+    ti = i[::-1]
+    imm = ti[12:][::-1]
     imm = "000000000000" + imm
-    rd = i[-12:-7]
+    rd = ti[7:12][::-1]
     opcode = i[-7:]
     if opcode == "0110111":
         pc = lui(rd, imm, pc, reg_dic)
@@ -279,20 +302,32 @@ def U(i, pc, reg_dic):
     return pc
 
 def J_jal(i, pc, reg_dic):
-    imm = i[0] + i[13:21] + i[12] + i[1:11]                #check
+    ti = i[::-1]
+    # imm[20|10 : 1|11|19 : 12]
+    imm = i[0] + ti[12:20][::-1] + ti[20] + i[1:11]                #check
+    #imm = i[0] + i[12:21] + i[11] + i[1:11]                #check
     imm = sext(imm)
     imm = signed_conversion(imm)
     rd = i[-12:-7]
     reg_dic[rd] = decimaltobinary(pc + 4)     #pc + imm is int but reg_dic[rd] stores binary value
     pc += imm                                 #assuming pc is int
-    return pc                                 #assuming pc is int                                               
+    return pc                               #assuming pc is int                                               
 
 def simulator(reg_dic, mem_dic, pc_dic, reg_opc_to_mem_add):
     pc = 0
     while pc <= 252:
         inst = pc_dic[pc]
         opc = inst[-7:]
-        
+        #print(pc, opc)
+        if inst == "00000000000000000000000001100011":
+            l=[]
+            for i in reg_dic.keys():
+                if i=="program":
+                    l.append(reg_dic[i])
+                else:
+                    l.append('0b'+reg_dic[i])
+            outputt.append(" ".join(l))             
+            break
         if opc == "0110011":
             pc = R(inst, pc, reg_dic)
         if opc == "0000011" or opc == "0010011" or opc == "1100111":
@@ -305,14 +340,23 @@ def simulator(reg_dic, mem_dic, pc_dic, reg_opc_to_mem_add):
             pc = U(inst, pc, reg_dic)
         if opc == "1101111":
             pc = J_jal(inst, pc, reg_dic)
-        reg_dic["program"] = "0b" + decimaltobinary(pc)
+        #print(reg_dic, "#instruction")
+        reg_dic["program"] = "0b" + decimaltobinary(pc)        
+        l=[]
+        for i in reg_dic.keys():
+            if i=="program":
+                l.append(reg_dic[i])
+            else:
+                l.append('0b'+reg_dic[i])
+        outputt.append(" ".join(l)) 
 
 
 
-reg_dic = {'program': '0b00000000000000000000000000000000', '00000': "0"*16, '00001': "0"*16, '00010': "0"*16, '00011': "0"*16, '00100': "0"*16, '00101': "0"*16, '00110': "0"*16, '00111': "0"*16, 
-    '01000': "0"*16, '01001': "0"*16, '01010': "0"*16, '01011': "0"*16, '01100': "0"*16, '01101': "0"*16, '01110': "0"*16, '01111': "0"*16, 
-    '10000': "0"*16, '10001': "0"*16, '10010': "0"*16, '10011': "0"*16, '10100': "0"*16, '10101': "0"*16, '10110': "0"*16, '10111': "0"*16, 
-    '11000': "0"*16, '11001': "0"*16, '11010': "0"*16, '11011': "0"*16, '11100': "0"*16, '11101': "0"*16, '11110': "0"*16, '11111': "0"*16}
+
+reg_dic = {'program': '0b00000000000000000000000000000000', '00000': '00000000000000000000000000000000', '00001': '00000000000000000000000000000000', '00010': '00000000000000000000000100000000', '00011': '00000000000000000000000000000000', '00100': '00000000000000000000000000000000', '00101': '00000000000000000000000000000000', '00110': '00000000000000000000000000000000', '00111': '00000000000000000000000000000000', 
+    '01000': '00000000000000000000000000000000', '01001': '00000000000000000000000000000000', '01010': '00000000000000000000000000000000', '01011': '00000000000000000000000000000000', '01100': '00000000000000000000000000000000', '01101': '00000000000000000000000000000000', '01110': '00000000000000000000000000000000', '01111': '00000000000000000000000000000000', 
+    '10000': '00000000000000000000000000000000', '10001': '00000000000000000000000000000000', '10010': '00000000000000000000000000000000', '10011': '00000000000000000000000000000000', '10100': '00000000000000000000000000000000', '10101': '00000000000000000000000000000000', '10110': '00000000000000000000000000000000', '10111': '00000000000000000000000000000000', 
+    '11000': '00000000000000000000000000000000', '11001': '00000000000000000000000000000000', '11010': '00000000000000000000000000000000', '11011': '00000000000000000000000000000000', '11100': '00000000000000000000000000000000', '11101': '00000000000000000000000000000000', '11110': '00000000000000000000000000000000', '11111': '00000000000000000000000000000000'}
 
 mem_dic = {}
 reg_opc_to_mem_add = {}
@@ -320,7 +364,7 @@ reg_opc_to_mem_add = {}
 # MEM_DICT
 
 for i in range(32):  
-    address = f'0x{int(0x00100000 + i*4):08X}'  
+    address = f'0x{int(0x00010000 + i*4):08X}'.lower() 
     mem_dic[address] = '0' * 32
 
 mem_keys = list(mem_dic.keys())
@@ -343,7 +387,8 @@ if not os.path.exists(input):
     sys.exit("Input file does not exist")
 
 # Open the input file
-input_file = open(input, "r")
+#input_file = open(input, "r")
+outputt = []
 with open(input, "r") as input_file:
     # Check if the input file is empty
     if not input_file:
@@ -352,17 +397,17 @@ with open(input, "r") as input_file:
     x = input_file.readlines()
     pc_dic = {}
     pc = 0
-    output = []
+    
     for line in x:
-        pc_dic[pc] = line
+        pc_dic[pc] = line.strip("\n")
         pc += 4
-
+#print(mem_dic)
 simulator(reg_dic, mem_dic, pc_dic, reg_opc_to_mem_add)
 # Write output to the output file
-with open(output, "r") as output_file:
-    for line in output:
+with open(output, "w") as output_file:
+    for line in outputt:
         output_file.write(line + "\n")
     for i in mem_dic.keys():
-        output_file.write(i + ":" + mem_dic[i] + "\n")
+        output_file.write(i + ":" + "0b" + mem_dic[i] + "\n")
 
-sys.exit()   
+sys.exit()
