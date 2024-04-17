@@ -311,6 +311,7 @@ def J_jal(i, pc, reg_dic):
     reg_dic[rd] = decimaltobinary(pc + 4)     #pc + imm is int but reg_dic[rd] stores binary value
     pc = decimaltobinary(pc + imm)            #check for rs1 + imm overflow
     pc = pc[:-1] + "0"
+    pc = int(pc, 2)
     return pc                                                                           
 
 def simulator(reg_dic, mem_dic, pc_dic, reg_opc_to_mem_add):
