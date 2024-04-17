@@ -220,7 +220,7 @@ def lw(rd, rs1, imm, pc, reg_dic, mem_dic):        #0000000101010100101000000010
 
     #number = rs1 + imm
     #hexe = f"0x{number:08X}" 
-    reg_dic[rd] = mem_dic[t32]             
+    reg_dic[rd] = mem_dic[t32.lower()]             
     return pc + 4                              #assuming pc is int
 def addi(rd, rs1, imm, pc, reg_dic):
     rs1 = sext(rs1)
@@ -265,34 +265,34 @@ def S_sw(i, pc, reg_opc_to_mem_add, mem_dic):
     
     imm = sext(imm)
     imm = signed_conversion(imm)
-    immt = f"0x{imm:08X}"
     
     rs1 = ti[15:20][::-1]
-    rs1x = rs1
     rs1 = sext(reg_dic[rs1])                           #check for rs1 + imm overflow
     rs1 = signed_conversion(rs1)  #
     num = rs1+imm
-    num = f"0x{num:08X}"
+    num = f"0x{num:08X}".lower()
     rs2 = ti[20:25][::-1]
-    t=hex(int(reg_opc_to_mem_add[rs1x][2:], 16) + int(immt[2:], 16))
-    t32 = f"0x{int(t, 16):08X}"
+    print(num)
     mem_dic[num] = reg_dic[rs2]
-    #print(mem_dic)
+    print(mem_dic)
     return pc + 4                                                          #assuming pc is int
 
 def lui(rd, imm, pc, reg_dic):
     imm = signed_conversion(imm)
-    reg_dic[rd] = decimaltobinary(pc + imm)   #pc + imm is int but reg_dic[rd] stores binary value
+    print(imm, "#lui", pc)
+    reg_dic[rd] = decimaltobinary(imm)   #pc + imm is int but reg_dic[rd] stores binary value
     return pc + 4                             #assuming pc is int
 
 def aiupc(rd, imm, pc, reg_dic):
-    reg_dic[rd] = imm
+    imm = signed_conversion(imm)
+    print(imm, "#aiupc", pc)
+    reg_dic[rd] = decimaltobinary(imm+pc)
     return pc + 4                             #assuming pc is int
 
 def U(i, pc, reg_dic):
     ti = i[::-1]
     imm = ti[12:][::-1]
-    imm = "000000000000" + imm
+    imm =  imm + "000000000000"
     rd = ti[7:12][::-1]
     opcode = i[-7:]
     if opcode == "0110111":
@@ -318,7 +318,7 @@ def simulator(reg_dic, mem_dic, pc_dic, reg_opc_to_mem_add):
     while pc <= 252:
         inst = pc_dic[pc]
         opc = inst[-7:]
-        #print(pc, opc)
+        
         if inst == "00000000000000000000000001100011":
             l=[]
             for i in reg_dic.keys():
@@ -340,8 +340,10 @@ def simulator(reg_dic, mem_dic, pc_dic, reg_opc_to_mem_add):
             pc = U(inst, pc, reg_dic)
         if opc == "1101111":
             pc = J_jal(inst, pc, reg_dic)
-        #print(reg_dic, "#instruction")
-        reg_dic["program"] = "0b" + decimaltobinary(pc)        
+        
+        reg_dic["program"] = "0b" + decimaltobinary(pc)
+        print(pc, opc)  
+        print(reg_dic, "#instruction")  
         l=[]
         for i in reg_dic.keys():
             if i=="program":
